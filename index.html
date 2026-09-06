@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>LLM 费用增长计算器</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <h1>LLM 费用增长计算器</h1>
+      <div class="settings">
+        <label class="setting-item">
+          <span>输入占比R</span>
+          <input id="set-r" type="number" step="0.05" min="0" max="1" value="0.5" />
+        </label>
+        <label class="setting-item">
+          <span>增长x</span>
+          <input id="set-x" type="number" step="0.1" min="0.1" value="1" />
+          <span>K/请求</span>
+        </label>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-page="curve">费用曲线</button>
+      <button class="tab" data-page="compare">双模型对比</button>
+      <button class="tab" data-page="rank277">277K 价格榜</button>
+      <button class="tab" data-page="calib">榜单校准</button>
+      <button class="tab" data-page="calibcmp">校准对比</button>
+      <button class="tab" data-page="rank300">300请求榜</button>
+      <button class="tab" data-page="gorank">Plan 折算榜</button>
+    </nav>
+  </header>
+
+  <main id="main">
+
+    <!-- 1 费用曲线 -->
+    <section class="page active" id="page-curve">
+      <div class="card">
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">模型（选择后自动填价，价格可直接改）</span>
+            <select id="curve-model"></select>
+          </label>
+          <label class="field hidden" id="curve-name-wrap">
+            <span class="field-label">自定义模型名称</span>
+            <input id="curve-customname" type="text" placeholder="自定义模型" />
+          </label>
+        </div>
+        <div class="custom-grid">
+          <label>输入价 ¥/M<input id="curve-pin" type="number" step="0.01" min="0" /></label>
+          <label>输出价 ¥/M<input id="curve-pout" type="number" step="0.01" min="0" /></label>
+          <label>缓存价 ¥/M<input id="curve-pc" type="number" step="0.001" min="0" /></label>
+        </div>
+        <p class="model-note hidden" id="curve-note"></p>
+      </div>
+      <div class="card">
+        <div class="chart-wrap">
+          <canvas id="curve-chart"></canvas>
+          <div class="chart-tip hidden"></div>
+        </div>
+        <div class="readout" id="curve-readout"></div>
+      </div>
+      <p class="page-note">计费公式：花费(C) = C·R·输入价 + C·(1−R)·输出价 + (1+2+…+⌊C/x⌋)·x·缓存价。C 为上下文（K tokens），每次请求新增 x K，新增部分按输入价 R·x、输出价 (1−R)·x 计费，同时全量上下文按缓存读价重收（第 k 次请求收 k·x）。R、x 在顶部设置条调整。曲线横轴 1K–1M 上下文，虚线为 277K（Codex 默认窗口）。</p>
+    </section>
+
+    <!-- 2 双模型对比 -->
+    <section class="page" id="page-compare">
+      <div class="card">
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">模型 A（选择后自动填价）</span>
+            <select id="cmp-model-a"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">模型 B（选择后自动填价）</span>
+            <select id="cmp-model-b"></select>
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field hidden" id="cmp-name-wrap-a">
+            <span class="field-label">A 自定义名称</span>
+            <input id="cmp-customname-a" type="text" placeholder="自定义模型 A" />
+          </label>
+          <label class="field hidden" id="cmp-name-wrap-b">
+            <span class="field-label">B 自定义名称</span>
+            <input id="cmp-customname-b" type="text" placeholder="自定义模型 B" />
+          </label>
+        </div>
+        <div class="custom-grid ab">
+          <label>A 输入 ¥/M<input id="cmp-pin-a" type="number" step="0.01" min="0" /></label>
+          <label>B 输入 ¥/M<input id="cmp-pin-b" type="number" step="0.01" min="0" /></label>
+          <label>A 输出 ¥/M<input id="cmp-pout-a" type="number" step="0.01" min="0" /></label>
+          <label>B 输出 ¥/M<input id="cmp-pout-b" type="number" step="0.01" min="0" /></label>
+          <label>A 缓存 ¥/M<input id="cmp-pc-a" type="number" step="0.001" min="0" /></label>
+          <label>B 缓存 ¥/M<input id="cmp-pc-b" type="number" step="0.001" min="0" /></label>
+        </div>
+        <p class="model-note hidden" id="cmp-note"></p>
+      </div>
+      <div class="card">
+        <div class="chart-wrap">
+          <canvas id="cmp-chart"></canvas>
+          <div class="chart-tip hidden"></div>
+        </div>
+        <div class="readout" id="cmp-readout"></div>
+      </div>
+      <p class="page-note">两条累计费用曲线按相同上下文对比（每模型 1K/请求）。虚线为 277K（Codex 默认窗口）。</p>
+    </section>
+
+    <!-- 3 277K 价格榜 -->
+    <section class="page" id="page-rank277">
+      <div class="card">
+        <p class="page-note inline-note">按爬到 277K 上下文（Codex 默认窗口）时的累计花费排名，未做榜单校准，官方牌价，使用顶部设置条的全局 x、R 参数。爬到 277K 需 ⌊277/x⌋ 次请求。</p>
+        <div class="bar-list" id="rank277-list"></div>
+      </div>
+    </section>
+
+    <!-- 4 榜单校准 -->
+    <section class="page" id="page-calib">
+      <div class="card">
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">模型（选择后自动填价，价格可直接改）</span>
+            <select id="calib-model"></select>
+          </label>
+          <label class="field field-num">
+            <span class="field-label">请求数</span>
+            <input id="calib-req" type="number" step="10" min="1" max="2000" value="300" />
+          </label>
+          <label class="field hidden" id="calib-name-wrap">
+            <span class="field-label">自定义模型名称</span>
+            <input id="calib-customname" type="text" placeholder="自定义模型" />
+          </label>
+        </div>
+        <div class="custom-grid">
+          <label>输入价 ¥/M<input id="calib-pin" type="number" step="0.01" min="0" /></label>
+          <label>输出价 ¥/M<input id="calib-pout" type="number" step="0.01" min="0" /></label>
+          <label>缓存价 ¥/M<input id="calib-pc" type="number" step="0.001" min="0" /></label>
+        </div>
+        <p class="model-note hidden" id="calib-note"></p>
+      </div>
+      <div class="card">
+        <div class="chart-wrap">
+          <canvas id="calib-chart"></canvas>
+          <div class="chart-tip hidden"></div>
+        </div>
+        <div class="readout" id="calib-readout"></div>
+      </div>
+      <p class="page-note">校准口径：α = √(t榜/t₀)，t₀ 为 Fable 5.1 的榜单 token（40498）；校准把每请求新增上下文改为 x = α——token 效率低（T榜大）的模型每请求新增更多上下文，同请求数下上下文更大、花费更高，到达 277K 所需请求数更少；效率高的模型爬得慢、花费低。虚线为到达 277K 上下文所需的请求数。无榜单行的模型按 α=1（未校准）处理。</p>
+    </section>
+
+    <!-- 5 校准对比 -->
+    <section class="page" id="page-calibcmp">
+      <div class="card">
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">模型 A（选择后自动填价）</span>
+            <select id="cc-model-a"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">模型 B（选择后自动填价）</span>
+            <select id="cc-model-b"></select>
+          </label>
+          <label class="field field-num">
+            <span class="field-label">请求数</span>
+            <input id="cc-req" type="number" step="10" min="1" max="2000" value="300" />
+          </label>
+          <label class="field hidden" id="cc-name-wrap-a">
+            <span class="field-label">A 自定义名称</span>
+            <input id="cc-customname-a" type="text" placeholder="自定义模型 A" />
+          </label>
+          <label class="field hidden" id="cc-name-wrap-b">
+            <span class="field-label">B 自定义名称</span>
+            <input id="cc-customname-b" type="text" placeholder="自定义模型 B" />
+          </label>
+        </div>
+        <div class="custom-grid ab">
+          <label>A 输入 ¥/M<input id="cc-pin-a" type="number" step="0.01" min="0" /></label>
+          <label>B 输入 ¥/M<input id="cc-pin-b" type="number" step="0.01" min="0" /></label>
+          <label>A 输出 ¥/M<input id="cc-pout-a" type="number" step="0.01" min="0" /></label>
+          <label>B 输出 ¥/M<input id="cc-pout-b" type="number" step="0.01" min="0" /></label>
+          <label>A 缓存 ¥/M<input id="cc-pc-a" type="number" step="0.001" min="0" /></label>
+          <label>B 缓存 ¥/M<input id="cc-pc-b" type="number" step="0.001" min="0" /></label>
+        </div>
+        <p class="model-note hidden" id="cc-note"></p>
+      </div>
+      <div class="card">
+        <h3 class="card-title">请求数 → 上下文</h3>
+        <div class="chart-wrap">
+          <canvas id="cc-chart-ctx"></canvas>
+          <div class="chart-tip hidden"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="card-title">请求数 → 累计费用</h3>
+        <div class="chart-wrap">
+          <canvas id="cc-chart-cost"></canvas>
+          <div class="chart-tip hidden"></div>
+        </div>
+        <div class="readout" id="cc-readout"></div>
+      </div>
+      <p class="page-note">校准对比按<strong>相同请求数</strong>（而非相同上下文）：x=α，token 效率低（α>1）的模型每请求新增更多上下文——同请求数下上下文爬得更快、累计花费更高。上图为两条上下文爬升线，下图为对应累计花费。</p>
+    </section>
+
+    <!-- 6 300 请求榜 -->
+    <section class="page" id="page-rank300">
+      <div class="card">
+        <div class="sort-row">
+          <button class="sort-btn active" data-sort="alpha-cost">α折算 · 费用</button>
+          <button class="sort-btn" data-sort="alpha-eff">α · 费用/√分数</button>
+          <button class="sort-btn" data-sort="beta-cost">β折算 · 费用（极限）</button>
+          <button class="sort-btn" data-sort="beta-eff">β · 费用/分数（极限）</button>
+        </div>
+        <p class="page-note inline-note" id="rank300-note"></p>
+        <div class="bar-list" id="rank300-list"></div>
+      </div>
+    </section>
+
+    <!-- 7 Plan 折算榜 -->
+    <section class="page" id="page-gorank">
+      <div class="card">
+        <label class="slider-row">
+          <span>缓存命中率</span>
+          <input id="tp-hit" type="range" min="0" max="99" step="1" value="90" />
+          <b id="tp-hit-val">90%</b>
+        </label>
+        <p class="page-note inline-note" id="gorank-note"></p>
+        <div class="plan-list" id="gorank-list"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="./assets/data.js"></script>
+  <script src="./assets/charts.js"></script>
+  <script src="./assets/main.js"></script>
+</body>
+</html>
