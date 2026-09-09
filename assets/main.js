@@ -459,6 +459,18 @@
     var ratio = m.bench[1] / TF;
     return mode === 'beta' ? ratio : Math.sqrt(ratio);
   }
+  // 分数修正 S（基准 Sonnet 5）：med ≥ Sonnet5 线性归一到 [1,2]（Sonnet5=1、GPT-6=2，不开根号）；
+  // med < Sonnet5 按对数惩罚归一到 (0.1,1]（最末=0.1）
+  function scoreNorm(med) {
+    var s0 = byId['sonnet5'].bench[0], s1 = byId['gpt6astra'].bench[0];
+    if (med >= s0) return 1 + (med - s0) / (s1 - s0);
+    var lo = Infinity;
+    for (var i = 0; i < MODELS.length; i++) {
+      if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0];
+    }
+    var t = (med - s0) / (lo - s0);
+    return Math.pow(10, -t);
+  }
   function initRank300() {
     var btns = document.querySelectorAll('#page-rank300 .sort-btn');
     for (var i = 0; i < btns.length; i++) {
@@ -484,17 +496,17 @@
       var x = factorOf(m, mode); // α 或 β 直接作为 x（效率低→每请求新增更多上下文→同请求数花费更高）
       var c = costAtReq(RANK_P, p, x, state.R);
       var med = m.bench[0];
-      rows.push({ m: m, cost: c, med: med, eff: effMode && mode === 'beta' ? c / med : c / Math.sqrt(med) });
+      rows.push({ m: m, cost: c, med: med, eff: c / scoreNorm(med) });
     }
     var noteEl = $('rank300-note');
     if (rank300Sort === 'alpha-cost') {
       noteEl.textContent = '校准口径 α=√(t榜/t0)、x=α 下发 ' + RANK_P + ' 次请求的累计花费（官方牌价，R=' + num(state.R, 2) + '）。效率低（T榜大）的模型每请求新增更多上下文、花费更高。';
     } else if (rank300Sort === 'alpha-eff') {
-      noteEl.textContent = 'α折算累计花费 ÷ √榜单中位分：高分模型除以更大的分母，防止"贵但强"被一票否决。数值越小性价比越好。';
+      noteEl.textContent = 'α折算累计花费 ÷ 分数修正S。基准 Sonnet 5（med ' + num(byId['sonnet5'].bench[0], 2) + '）=1：其上线性归一（GPT-6 Astra=2，不开根号），其下按对数惩罚（最末 ' + (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })() + '）=0.1，低分模型被重罚。数值越小性价比越好。';
     } else if (rank300Sort === 'beta-cost') {
       noteEl.textContent = 'β=t榜/t0 不开根号（x=β）：不做日常压缩的极限口径，效率差距全额体现，仅作参考。';
     } else {
-      noteEl.textContent = 'β折算累计花费 ÷ 分数（不开根号）：双极限口径，低分模型被全额惩罚，仅作参考。';
+      noteEl.textContent = 'β（极限口径）累计花费 ÷ 同一分数修正S（Sonnet 5=1、GPT-6 Astra=2、最末=0.1）：双极限参考。';
     }
     rows.sort(function (a, b) {
       return rank300Sort.indexOf('-cost') > 0 ? a.cost - b.cost : a.eff - b.eff;
@@ -504,7 +516,7 @@
       var it = rows[k];
       bar.push({
         label: it.m.name,
-        sub: (mode === 'beta' ? 'β=' : 'α=') + num(factorOf(it.m, mode), 2) + ' · med=' + num(it.med, 1),
+        sub: (mode === 'beta' ? 'β=' : 'α=') + num(factorOf(it.m, mode), 2) + ' · S=' + num(scoreNorm(it.med), 2) + ' · med=' + num(it.med, 1),
         value: effMode ? it.eff : it.cost,
         valueText: effMode ? money(it.eff) : money(it.cost)
       });
