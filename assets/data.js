@@ -1,4 +1,4 @@
-/* 自动生成自 benchmark.csv + plans-go/glm-v2/glm-v3/baidu/volc/sense.csv（勿手改）。改数据后运行 build_data.py。
+/* 自动生成自 benchmark.csv + plans-go/glm-v2/glm-v3/baidu/volc/sense/tencent.csv（勿手改）。改数据后运行 build_data.py。
  * 价格单位 ¥/1M tokens。p = 官方牌价 [输入, 输出, 缓存读]（海外=OR美元×7，国产=原厂人民币价）。
  * gp = OpenCode Go 折后价 [额度Q$, 输入, 输出, 缓存读]，由 plans-go.csv 表列$ × 10/额度 × 7 算出。
  * bench = [榜单中位分, 每题平均全口径 token]（llm_benchmark logic）；t0 基准 = Fable 5.1 xhigh。
@@ -144,6 +144,26 @@
     { plan: 'SenseAudio Token Plan Ultra', name: 'GLM-5.3-Flash', pin: 0.1696, pout: 0.5934, pc: 0.1696 },
     { plan: 'SenseAudio Token Plan Ultra', name: 'GLM-5.2 (<32K)', pin: 1.2717, pout: 5.0866, pc: 1.2717 },
     { plan: 'SenseAudio Token Plan Ultra', name: 'GLM-5.2 (≥32K)', pin: 1.6955, pout: 5.9344, pc: 1.6955 },
+    { plan: '腾讯 TokenHub 通用 Lite', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 1.1142, pout: 1.1142, pc: 1.1142 },
+    { plan: '腾讯 TokenHub 通用 Lite', name: 'DeepSeek V4 Pro 0813 (正式版)', pin: 1.1142, pout: 1.1142, pc: 1.1142 },
+    { plan: '腾讯 TokenHub 通用 Standard', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 0.99, pout: 0.99, pc: 0.99 },
+    { plan: '腾讯 TokenHub 通用 Standard', name: 'DeepSeek V4 Pro 0813 (正式版)', pin: 0.99, pout: 0.99, pc: 0.99 },
+    { plan: '腾讯 TokenHub 通用 Pro', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 0.9344, pout: 0.9344, pc: 0.9344 },
+    { plan: '腾讯 TokenHub 通用 Pro', name: 'DeepSeek V4 Pro 0813 (正式版)', pin: 0.9344, pout: 0.9344, pc: 0.9344 },
+    { plan: '腾讯 TokenHub 通用 Max', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 0.9215, pout: 0.9215, pc: 0.9215 },
+    { plan: '腾讯 TokenHub 通用 Max', name: 'DeepSeek V4 Pro 0813 (正式版)', pin: 0.9215, pout: 0.9215, pc: 0.9215 },
+    { plan: '腾讯 TokenHub 通用', name: 'GLM-5.3-Flash', pin: 0.8, pout: 2.8, pc: 0.23 },
+    { plan: '腾讯 TokenHub 通用', name: 'GLM-5.3', pin: 8.0, pout: 28.0, pc: 2.0 },
+    { plan: '腾讯 TokenHub 通用', name: 'Kimi-K3', pin: 20.0, pout: 100.0, pc: 2.0 },
+    { plan: '腾讯 TokenHub 通用', name: 'MiniMax-M3 (≤512K)', pin: 2.1, pout: 8.4, pc: 0.42 },
+    { plan: '腾讯 TokenHub 通用 限时', name: 'GLM-5.3 (限时85折)', pin: 6.8, pout: 23.8, pc: 1.7 },
+    { plan: '腾讯 TokenHub 通用 限时', name: 'Kimi-K3 (限时95折)', pin: 19.0, pout: 95.0, pc: 1.9 },
+    { plan: '腾讯 TokenHub 通用 限时', name: 'MiniMax-M3 (限时5折)', pin: 1.05, pout: 4.2, pc: 0.21 },
+    { plan: '腾讯 TokenHub Hy Lite', name: 'Hy3', pin: 0.8, pout: 0.8, pc: 0.8 },
+    { plan: '腾讯 TokenHub Hy Standard', name: 'Hy3', pin: 0.78, pout: 0.78, pc: 0.78 },
+    { plan: '腾讯 TokenHub Hy Pro', name: 'Hy3', pin: 0.7438, pout: 0.7438, pc: 0.7438 },
+    { plan: '腾讯 TokenHub Hy Max', name: 'Hy3', pin: 0.72, pout: 0.72, pc: 0.72 },
+    { plan: '腾讯 TokenHub Hy 限时', name: 'Hy3 (hy3-202608 限时5折)', pin: 0.5, pout: 2.0, pc: 0.125 },
     { plan: '智谱 Coding Plan v3 Lite', name: 'GLM-5.3', pin: 0.9395, pout: 3.2677, pc: 0.2315 },
     { plan: '智谱 Coding Plan v3 Lite', name: 'GLM-5.3-Flash', pin: 0.3132, pout: 1.0892, pc: 0.0762 },
     { plan: '智谱 Coding Plan v3 Lite 高峰', name: 'GLM-5.3', pin: 1.8789, pout: 6.5354, pc: 0.4629 },
