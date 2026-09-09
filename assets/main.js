@@ -459,10 +459,10 @@
     var ratio = m.bench[1] / TF;
     return mode === 'beta' ? ratio : Math.sqrt(ratio);
   }
-  // 分数修正 S（基准 Sonnet 5）：med ≥ Sonnet5 线性归一到 [1,2]（Sonnet5=1、GPT-6=2，不开根号）；
-  // med < Sonnet5 按对数惩罚归一到 (0.1,1]（最末=0.1）
-  function scoreNorm(med) {
-    var s0 = byId['sonnet5'].bench[0], s1 = byId['gpt6astra'].bench[0];
+  // 分数修正 S：med ≥ 基准 线性归一到 [1,2]（基准=1、GPT-6 Astra=2，不开根号）；
+  // med < 基准 按对数惩罚归一到 (0.1,1]（最末=0.1）。baseId：300请求榜用 sonnet5，斩杀线榜用 dsv4flash
+  function scoreNorm(med, baseId) {
+    var s0 = byId[baseId].bench[0], s1 = byId['gpt6astra'].bench[0];
     if (med >= s0) return 1 + (med - s0) / (s1 - s0);
     var lo = Infinity;
     for (var i = 0; i < MODELS.length; i++) {
@@ -496,7 +496,7 @@
       var x = factorOf(m, mode); // α 或 β 直接作为 x（效率低→每请求新增更多上下文→同请求数花费更高）
       var c = costAtReq(RANK_P, p, x, state.R);
       var med = m.bench[0];
-      rows.push({ m: m, cost: c, med: med, eff: c / scoreNorm(med) });
+      rows.push({ m: m, cost: c, med: med, eff: c / scoreNorm(med, 'sonnet5') });
     }
     var noteEl = $('rank300-note');
     if (rank300Sort === 'alpha-cost') {
@@ -516,7 +516,7 @@
       var it = rows[k];
       bar.push({
         label: it.m.name,
-        sub: (mode === 'beta' ? 'β=' : 'α=') + num(factorOf(it.m, mode), 2) + ' · S=' + num(scoreNorm(it.med), 2) + ' · med=' + num(it.med, 1),
+        sub: (mode === 'beta' ? 'β=' : 'α=') + num(factorOf(it.m, mode), 2) + ' · S=' + num(scoreNorm(it.med, 'sonnet5'), 2) + ' · med=' + num(it.med, 1),
         value: effMode ? it.eff : it.cost,
         valueText: effMode ? money(it.eff) : money(it.cost)
       });
@@ -524,7 +524,39 @@
     barList($('rank300-list'), bar);
   }
 
-  // ---------- 页面 7：Plan 折算榜（纯数据展示：折算三价 + 折算 token 单价，按单价排名） ----------
+  // ---------- 页面 7：斩杀线榜（第二张修正榜：分数修正S 的基准换成 DeepSeek V4 Flash） ----------
+  function initKillRank() {
+    renderKillRank();
+  }
+  function renderKillRank() {
+    var BASE_ID = 'dsv4flash';
+    var rows = [];
+    for (var i = 0; i < MODELS.length; i++) {
+      var m = MODELS[i];
+      if (!m.bench) continue;
+      var p = getPrices(m, 'or');
+      if (!p) continue;
+      var x = factorOf(m, 'alpha');
+      var c = costAtReq(RANK_P, p, x, state.R);
+      rows.push({ m: m, cost: c, med: m.bench[0], eff: c / scoreNorm(m.bench[0], BASE_ID) });
+    }
+    rows.sort(function (a, b) { return a.eff - b.eff; });
+    var bar = [];
+    for (var k = 0; k < rows.length; k++) {
+      var it = rows[k];
+      bar.push({
+        label: it.m.name,
+        sub: 'α=' + num(factorOf(it.m, 'alpha'), 2) + ' · S=' + num(scoreNorm(it.med, BASE_ID), 2) + ' · med=' + num(it.med, 1),
+        value: it.eff,
+        valueText: money(it.eff)
+      });
+    }
+    barList($('killrank-list'), bar);
+    var s0 = byId[BASE_ID].bench[0];
+    $('killrank-note').textContent = '第二张修正榜：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(s0, 2) + '）=1，斩杀线即基准线——med 在基准之上线性归一（GPT-6 Astra=2，不开根号），之下按对数惩罚（最末 7.42=0.1）。α折算 × ' + RANK_P + ' 请求费用 ÷ S（R=' + num(state.R, 2) + '）。修正费用高于基准模型自身费用的即被斩杀。';
+  }
+
+  // ---------- 页面 8：Plan 折算榜（纯数据展示：折算三价 + 折算 token 单价，按单价排名） ----------
   function initGoRank() {
     var slider = $('tp-hit');
     slider.value = String(Math.round(state.tpHit * 100));
@@ -623,10 +655,10 @@
     // 先初始化各页（填充模型下拉、渲染默认视图），再绑设置——
     // 设置变更回调会触发全页重算，若在填充前触发会读到空下拉导致崩溃
     initCurve(); initCompare(); initRank277(); initCalib();
-    initCalibCmp(); initRank300(); initGoRank();
+    initCalibCmp(); initRank300(); initKillRank(); initGoRank();
     bindSettings(function () {
       renderCurve(); renderCompare(); renderRank277(); renderCalib();
-      renderCalibCmp(); renderRank300(); renderGoRank();
+      renderCalibCmp(); renderRank300(); renderKillRank(); renderGoRank();
     });
     // 旋转/改窗口尺寸时重绘图表（防抖）
     var rsTimer = null;
