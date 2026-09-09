@@ -510,7 +510,7 @@
     } else if (rank300Sort === 'alpha-eff') {
       noteEl.textContent = 'α折算累计花费 ÷ 分数修正S。基准 Sonnet 5（med ' + num(byId['sonnet5'].bench[0], 2) + '）=1：其上线性归一（GPT-6 Astra=2，不开根号），其下按对数惩罚（最末 ' + (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })() + '）=0.1，低分模型被重罚。显示值为性价比指数：折算费用÷S 再除以基准模型自身的修正费用（Sonnet 5=1.00），无量纲、越小越好。';
     } else if (rank300Sort === 'kill') {
-      noteEl.textContent = '斩杀线口径：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1——显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀、低于线的才打得起 API。其余口径同「α · 费用/分数修正」。';
+      noteEl.textContent = '斩杀线口径：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1——显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀、低于线的才打得起 API。其余口径同「α 费用/分数修正（Sonnet 5 基准）」。';
     } else if (rank300Sort === 'beta-cost') {
       noteEl.textContent = 'β=t榜/t0 不开根号（x=β）：不做日常压缩的极限口径，效率差距全额体现，仅作参考。';
     } else if (rank300Sort === 'beta-eff') {
