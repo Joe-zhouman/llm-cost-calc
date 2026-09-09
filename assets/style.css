@@ -207,14 +207,15 @@ table.rank-table { width: 100%; border-collapse: collapse; font-size: 12px; marg
 .rank-table th { color: #5b6572; font-weight: 600; }
 .rank-table td.dim { color: #9aa3ad; }
 
-.sort-row { display: flex; margin-bottom: 8px; }
+.sort-row { display: flex; flex-wrap: wrap; margin-bottom: 8px; }
 .sort-btn {
   border: 1px solid #d6dbe2;
   background: #fff;
-  border-radius: 14px;
-  padding: 4px 12px;
-  margin-right: 8px;
-  font-size: 13px;
+  border-radius: 12px;
+  padding: 5px 9px;
+  flex: 0 0 auto; /* 自然宽度换行排列，6 档按钮在窄屏不挤压 */
+  margin: 0 8px 6px 0;
+  font-size: 12px;
   color: #40495a;
 }
 .sort-btn.active { background: #4c72b0; border-color: #4c72b0; color: #fff; font-weight: 600; }
