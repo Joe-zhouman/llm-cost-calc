@@ -51,6 +51,7 @@
     { id: 'ernie51', name: 'ERNIE 5.1', bench: [11.2, 25367], p: [6.0, 22.0, 0.8], gp: null, note: '32-128K档；缓存价未单独列出，上下文太短处于不可用阶段。不如盘古大模型，甚至小红书。' },
     { id: 'openpangu2flash', name: 'openPangu-2.0-Flash', bench: [9.72, 29209], p: [0.8, 1.6, 0.2], gp: null },
     { id: 'longcat20', name: 'LongCat-2.0 Reasoning', bench: [7.42, 13808], p: [2.0, 8.0, 0.04], gp: [60, 0.35, 1.4, 0.007], note: '平台限时折扣4折' },
+    { id: 'muse13contrib', name: 'Muse Spark 1.3 Contributor', bench: null, p: [0.7, 1.4, 0.014], gp: [60, 0.1167, 0.2333, 0.0023], note: 'OpenCode Go在售(60Q档)；无榜单行；价同1.2 Contributor(OR $0.1/$0.2/$0.002×7)' },
   ];
 
   // Plan 折算榜：{plan 计划名, name 模型名, pin/pout/pc 折算三价 ¥/1M}
@@ -74,6 +75,7 @@
     { plan: 'OpenCode Go', name: 'Qwen3.7-Plus (high)', pin: 0.4667, pout: 1.8667, pc: 0.0467 },
     { plan: 'OpenCode Go', name: 'MiMo-V2.5-Pro', pin: 2.03, pout: 4.06, pc: 0.0169 },
     { plan: 'OpenCode Go', name: 'LongCat-2.0 Reasoning', pin: 0.35, pout: 1.4, pc: 0.007 },
+    { plan: 'OpenCode Go', name: 'Muse Spark 1.3 Contributor', pin: 0.1167, pout: 0.2333, pc: 0.0023 },
     { plan: '智谱 Coding Plan v2 Lite', name: 'GLM-5.3', pin: 0.2262, pout: 0.2262, pc: 0.2262 },
     { plan: '智谱 Coding Plan v2 Lite', name: 'GLM-5.3-Flash', pin: 0.0905, pout: 0.0905, pc: 0.0905 },
     { plan: '智谱 Coding Plan v2 Lite 高峰', name: 'GLM-5.3', pin: 0.6785, pout: 0.6785, pc: 0.6785 },
