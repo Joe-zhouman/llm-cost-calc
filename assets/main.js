@@ -21,7 +21,7 @@
 
   // ---------- 状态 ----------
   // 价格已统一为人民币（海外模型美元牌价×7 已折算进数据），全部 ¥ 展示
-  var state = { R: 0.5, gx: 1, tpHit: 0.9 };
+  var state = { R: 0.5, gx: 1, tpHit: 0.9, killBase: 'dsv4flash' };
   try {
     var saved = localStorage.getItem('llmcost-state');
     if (saved) {
@@ -30,6 +30,7 @@
         if (typeof saved.R === 'number' && saved.R >= 0 && saved.R <= 1) state.R = saved.R;
         if (typeof saved.gx === 'number' && saved.gx > 0) state.gx = saved.gx;
         if (typeof saved.tpHit === 'number') state.tpHit = saved.tpHit;
+        if (typeof saved.killBase === 'string') state.killBase = saved.killBase;
       }
     }
   } catch (e) { /* localStorage 不可用时用默认值 */ }
@@ -463,6 +464,7 @@
   // med < 基准 按对数惩罚归一到 (0.1,1]（最末=0.1）。baseId：300请求榜用 sonnet5，斩杀线榜用 dsv4flash
   function scoreNorm(med, baseId) {
     var s0 = byId[baseId].bench[0], s1 = byId['gpt6astra'].bench[0];
+    if (med === s0) return 1; // 基准自身（兼防基准=最高分时 0/0）
     if (med >= s0) return 1 + (med - s0) / (s1 - s0);
     var lo = Infinity;
     for (var i = 0; i < MODELS.length; i++) {
@@ -470,6 +472,11 @@
     }
     var t = (med - s0) / (lo - s0);
     return Math.pow(10, -t);
+  }
+  // 自选斩杀线基准：state.killBase（须有榜单行+官方价），非法回退 dsv4flash
+  function customBaseId() {
+    var c = state.killBase;
+    return (c && byId[c] && byId[c].bench && byId[c].p) ? c : 'dsv4flash';
   }
   function initRank300() {
     var btns = document.querySelectorAll('#page-rank300 .sort-btn');
@@ -482,6 +489,26 @@
         renderRank300();
       });
     }
+    // 自选斩杀线基准下拉：只收「有榜单行 + 有官方价」的模型（与榜内条目同口径），按 med 降序
+    var sel = $('kill-base');
+    if (sel) {
+      var opts = [];
+      for (var n = 0; n < MODELS.length; n++) {
+        if (MODELS[n].bench && MODELS[n].p) opts.push(MODELS[n]);
+      }
+      opts.sort(function (a, b) { return b.bench[0] - a.bench[0]; });
+      var html = '';
+      for (var k = 0; k < opts.length; k++) {
+        html += '<option value="' + opts[k].id + '">' + opts[k].name + ' · med ' + num(opts[k].bench[0], 1) + '</option>';
+      }
+      sel.innerHTML = html;
+      sel.value = customBaseId();
+      sel.addEventListener('change', function () {
+        state.killBase = sel.value;
+        persist();
+        renderRank300();
+      });
+    }
     renderRank300();
   }
   function renderRank300() {
@@ -489,7 +516,8 @@
     var isBetaKill = rank300Sort === 'beta-kill';
     var mode = rank300Sort.indexOf('beta') === 0 ? 'beta' : 'alpha';
     var effMode = isKill || rank300Sort.indexOf('-eff') > 0;
-    var baseId = isKill ? 'dsv4flash' : 'sonnet5';
+    var isCustom = rank300Sort === 'kill-custom' || rank300Sort === 'beta-kill-custom';
+    var baseId = isCustom ? customBaseId() : (isKill ? 'dsv4flash' : 'sonnet5');
     var rows = [];
     for (var i = 0; i < MODELS.length; i++) {
       var m = MODELS[i];
@@ -511,10 +539,14 @@
       noteEl.textContent = 'α折算累计花费 ÷ 分数修正S。基准 Sonnet 5（med ' + num(byId['sonnet5'].bench[0], 2) + '）=1：其上线性归一（GPT-6 Astra=2，不开根号），其下按对数惩罚（最末 ' + (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })() + '）=0.1，低分模型被重罚。显示值为性价比指数：折算费用÷S 再除以基准模型自身的修正费用（Sonnet 5=1.00），无量纲、越小越好。';
     } else if (rank300Sort === 'kill') {
       noteEl.textContent = '斩杀线口径：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1——显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀、低于线的才打得起 API。其余口径同「α 费用/分数修正（Sonnet 5 基准）」。';
+    } else if (rank300Sort === 'kill-custom') {
+      noteEl.textContent = '斩杀线口径·自选基准：分数修正S 以「' + byId[baseId].name + '」（med ' + num(byId[baseId].bench[0], 2) + '）=1——显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀。基准模型用上方下拉自选。';
     } else if (rank300Sort === 'beta-cost') {
       noteEl.textContent = 'β=t榜/t0 不开根号（x=β）：不做日常压缩的极限口径，效率差距全额体现，仅作参考。';
     } else if (rank300Sort === 'beta-eff') {
       noteEl.textContent = 'β（极限口径）累计花费 ÷ 同一分数修正S（Sonnet 5=1、GPT-6 Astra=2、最末=0.1）。显示值为指数（Sonnet 5=1.00），无量纲，双极限参考、越小越好。';
+    } else if (rank300Sort === 'beta-kill-custom') {
+      noteEl.textContent = 'β（极限口径）斩杀线·自选基准：分数修正S 以「' + byId[baseId].name + '」（med ' + num(byId[baseId].bench[0], 2) + '）=1，β 不开根号全额放大效率差。显示值为指数：基准自身 =1.00 即斩杀线，>1 被斩杀。';
     } else {
       noteEl.textContent = 'β（极限口径）斩杀线：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1，β 不开根号全额放大效率差。显示值为指数：DS-V4-Flash 自身 =1.00 即斩杀线，>1 被斩杀。双极限参考。';
     }
