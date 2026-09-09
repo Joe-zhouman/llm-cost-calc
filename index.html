@@ -24,21 +24,20 @@
       </div>
     </div>
     <nav class="tabs" id="tabs">
-      <button class="tab active" data-page="curve">费用曲线</button>
+      <button class="tab active" data-page="rank277">API价格榜</button>
+      <button class="tab" data-page="rank300">API性价比榜</button>
+      <button class="tab" data-page="gorank">Plan性价比榜</button>
+      <button class="tab" data-page="curve">费用曲线</button>
       <button class="tab" data-page="compare">双模型对比</button>
-      <button class="tab" data-page="rank277">277K 价格榜</button>
       <button class="tab" data-page="calib">榜单校准</button>
       <button class="tab" data-page="calibcmp">校准对比</button>
-      <button class="tab" data-page="rank300">300请求榜</button>
-      <button class="tab" data-page="killrank">斩杀线榜</button>
-      <button class="tab" data-page="gorank">Plan 折算榜</button>
     </nav>
   </header>
 
   <main id="main">
 
     <!-- 1 费用曲线 -->
-    <section class="page active" id="page-curve">
+    <section class="page" id="page-curve">
       <div class="card">
         <div class="field-row">
           <label class="field">
@@ -110,8 +109,8 @@
       <p class="page-note">两条累计费用曲线按相同上下文对比（每模型 1K/请求）。虚线为 277K（Codex 默认窗口）。</p>
     </section>
 
-    <!-- 3 277K 价格榜 -->
-    <section class="page" id="page-rank277">
+    <!-- 3 API 价格榜（原 277K 价格榜） -->
+    <section class="page active" id="page-rank277">
       <div class="card">
         <p class="page-note inline-note">按爬到 277K 上下文（Codex 默认窗口）时的累计花费排名，未做榜单校准，官方牌价，使用顶部设置条的全局 x、R 参数。爬到 277K 需 ⌊277/x⌋ 次请求。</p>
         <div class="bar-list" id="rank277-list"></div>
@@ -211,6 +210,7 @@
         <div class="sort-row">
           <button class="sort-btn active" data-sort="alpha-cost">α折算 · 费用</button>
           <button class="sort-btn" data-sort="alpha-eff">α · 费用/分数修正</button>
+          <button class="sort-btn" data-sort="kill">α · 斩杀线（DS基准）</button>
           <button class="sort-btn" data-sort="beta-cost">β折算 · 费用（极限）</button>
           <button class="sort-btn" data-sort="beta-eff">β · 费用/分数修正（极限）</button>
         </div>
@@ -219,15 +219,7 @@
       </div>
     </section>
 
-    <!-- 7 斩杀线榜 -->
-    <section class="page" id="page-killrank">
-      <div class="card">
-        <p class="page-note inline-note" id="killrank-note"></p>
-        <div class="bar-list" id="killrank-list"></div>
-      </div>
-    </section>
-
-    <!-- 8 Plan 折算榜 -->
+    <!-- 7 Plan 折算榜 -->
     <section class="page" id="page-gorank">
       <div class="card">
         <label class="slider-row">

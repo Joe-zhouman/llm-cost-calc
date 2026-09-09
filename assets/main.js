@@ -485,8 +485,10 @@
     renderRank300();
   }
   function renderRank300() {
+    var isKill = rank300Sort === 'kill';
     var mode = rank300Sort.indexOf('beta') === 0 ? 'beta' : 'alpha';
-    var effMode = rank300Sort.indexOf('-eff') > 0;
+    var effMode = isKill || rank300Sort.indexOf('-eff') > 0;
+    var baseId = isKill ? 'dsv4flash' : 'sonnet5';
     var rows = [];
     for (var i = 0; i < MODELS.length; i++) {
       var m = MODELS[i];
@@ -496,64 +498,34 @@
       var x = factorOf(m, mode); // α 或 β 直接作为 x（效率低→每请求新增更多上下文→同请求数花费更高）
       var c = costAtReq(RANK_P, p, x, state.R);
       var med = m.bench[0];
-      rows.push({ m: m, cost: c, med: med, eff: c / scoreNorm(med, 'sonnet5') });
+      rows.push({ m: m, cost: c, med: med, eff: c / scoreNorm(med, baseId) });
     }
     var noteEl = $('rank300-note');
     if (rank300Sort === 'alpha-cost') {
       noteEl.textContent = '校准口径 α=√(t榜/t0)、x=α 下发 ' + RANK_P + ' 次请求的累计花费（官方牌价，R=' + num(state.R, 2) + '）。效率低（T榜大）的模型每请求新增更多上下文、花费更高。';
     } else if (rank300Sort === 'alpha-eff') {
       noteEl.textContent = 'α折算累计花费 ÷ 分数修正S。基准 Sonnet 5（med ' + num(byId['sonnet5'].bench[0], 2) + '）=1：其上线性归一（GPT-6 Astra=2，不开根号），其下按对数惩罚（最末 ' + (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })() + '）=0.1，低分模型被重罚。数值越小性价比越好。';
+    } else if (isKill) {
+      noteEl.textContent = '斩杀线口径：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1——高于基准模型自身修正费用的即被斩杀，低于线的才是打得起 API 的。其余口径同「α · 费用/分数修正」。';
     } else if (rank300Sort === 'beta-cost') {
       noteEl.textContent = 'β=t榜/t0 不开根号（x=β）：不做日常压缩的极限口径，效率差距全额体现，仅作参考。';
     } else {
       noteEl.textContent = 'β（极限口径）累计花费 ÷ 同一分数修正S（Sonnet 5=1、GPT-6 Astra=2、最末=0.1）：双极限参考。';
     }
     rows.sort(function (a, b) {
-      return rank300Sort.indexOf('-cost') > 0 ? a.cost - b.cost : a.eff - b.eff;
+      return effMode ? a.eff - b.eff : a.cost - b.cost;
     });
     var bar = [];
     for (var k = 0; k < rows.length; k++) {
       var it = rows[k];
       bar.push({
         label: it.m.name,
-        sub: (mode === 'beta' ? 'β=' : 'α=') + num(factorOf(it.m, mode), 2) + ' · S=' + num(scoreNorm(it.med, 'sonnet5'), 2) + ' · med=' + num(it.med, 1),
+        sub: (mode === 'beta' ? 'β=' : 'α=') + num(factorOf(it.m, mode), 2) + ' · S=' + num(scoreNorm(it.med, baseId), 2) + ' · med=' + num(it.med, 1),
         value: effMode ? it.eff : it.cost,
         valueText: effMode ? money(it.eff) : money(it.cost)
       });
     }
     barList($('rank300-list'), bar);
-  }
-
-  // ---------- 页面 7：斩杀线榜（第二张修正榜：分数修正S 的基准换成 DeepSeek V4 Flash） ----------
-  function initKillRank() {
-    renderKillRank();
-  }
-  function renderKillRank() {
-    var BASE_ID = 'dsv4flash';
-    var rows = [];
-    for (var i = 0; i < MODELS.length; i++) {
-      var m = MODELS[i];
-      if (!m.bench) continue;
-      var p = getPrices(m, 'or');
-      if (!p) continue;
-      var x = factorOf(m, 'alpha');
-      var c = costAtReq(RANK_P, p, x, state.R);
-      rows.push({ m: m, cost: c, med: m.bench[0], eff: c / scoreNorm(m.bench[0], BASE_ID) });
-    }
-    rows.sort(function (a, b) { return a.eff - b.eff; });
-    var bar = [];
-    for (var k = 0; k < rows.length; k++) {
-      var it = rows[k];
-      bar.push({
-        label: it.m.name,
-        sub: 'α=' + num(factorOf(it.m, 'alpha'), 2) + ' · S=' + num(scoreNorm(it.med, BASE_ID), 2) + ' · med=' + num(it.med, 1),
-        value: it.eff,
-        valueText: money(it.eff)
-      });
-    }
-    barList($('killrank-list'), bar);
-    var s0 = byId[BASE_ID].bench[0];
-    $('killrank-note').textContent = '第二张修正榜：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(s0, 2) + '）=1，斩杀线即基准线——med 在基准之上线性归一（GPT-6 Astra=2，不开根号），之下按对数惩罚（最末 7.42=0.1）。α折算 × ' + RANK_P + ' 请求费用 ÷ S（R=' + num(state.R, 2) + '）。修正费用高于基准模型自身费用的即被斩杀。';
   }
 
   // ---------- 页面 8：Plan 折算榜（纯数据展示：折算三价 + 折算 token 单价，按单价排名） ----------
@@ -655,10 +627,10 @@
     // 先初始化各页（填充模型下拉、渲染默认视图），再绑设置——
     // 设置变更回调会触发全页重算，若在填充前触发会读到空下拉导致崩溃
     initCurve(); initCompare(); initRank277(); initCalib();
-    initCalibCmp(); initRank300(); initKillRank(); initGoRank();
+    initCalibCmp(); initRank300(); initGoRank();
     bindSettings(function () {
       renderCurve(); renderCompare(); renderRank277(); renderCalib();
-      renderCalibCmp(); renderRank300(); renderKillRank(); renderGoRank();
+      renderCalibCmp(); renderRank300(); renderGoRank();
     });
     // 旋转/改窗口尺寸时重绘图表（防抖）
     var rsTimer = null;
