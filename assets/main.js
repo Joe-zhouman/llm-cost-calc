@@ -485,7 +485,8 @@
     renderRank300();
   }
   function renderRank300() {
-    var isKill = rank300Sort === 'kill';
+    var isKill = rank300Sort.indexOf('kill') >= 0;
+    var isBetaKill = rank300Sort === 'beta-kill';
     var mode = rank300Sort.indexOf('beta') === 0 ? 'beta' : 'alpha';
     var effMode = isKill || rank300Sort.indexOf('-eff') > 0;
     var baseId = isKill ? 'dsv4flash' : 'sonnet5';
@@ -505,12 +506,14 @@
       noteEl.textContent = '校准口径 α=√(t榜/t0)、x=α 下发 ' + RANK_P + ' 次请求的累计花费（官方牌价，R=' + num(state.R, 2) + '）。效率低（T榜大）的模型每请求新增更多上下文、花费更高。';
     } else if (rank300Sort === 'alpha-eff') {
       noteEl.textContent = 'α折算累计花费 ÷ 分数修正S。基准 Sonnet 5（med ' + num(byId['sonnet5'].bench[0], 2) + '）=1：其上线性归一（GPT-6 Astra=2，不开根号），其下按对数惩罚（最末 ' + (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })() + '）=0.1，低分模型被重罚。数值越小性价比越好。';
-    } else if (isKill) {
+    } else if (rank300Sort === 'kill') {
       noteEl.textContent = '斩杀线口径：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1——高于基准模型自身修正费用的即被斩杀，低于线的才是打得起 API 的。其余口径同「α · 费用/分数修正」。';
     } else if (rank300Sort === 'beta-cost') {
       noteEl.textContent = 'β=t榜/t0 不开根号（x=β）：不做日常压缩的极限口径，效率差距全额体现，仅作参考。';
-    } else {
+    } else if (rank300Sort === 'beta-eff') {
       noteEl.textContent = 'β（极限口径）累计花费 ÷ 同一分数修正S（Sonnet 5=1、GPT-6 Astra=2、最末=0.1）：双极限参考。';
+    } else {
+      noteEl.textContent = 'β（极限口径）斩杀线：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1，β 不开根号全额放大效率差——高于基准自身修正费用的被斩杀。双极限参考。';
     }
     rows.sort(function (a, b) {
       return effMode ? a.eff - b.eff : a.cost - b.cost;
