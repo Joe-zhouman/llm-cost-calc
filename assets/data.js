@@ -1,8 +1,8 @@
-/* 自动生成自 benchmark.csv + plans-go.csv（勿手改）。改数据后运行 build_data.py。
+/* 自动生成自 benchmark.csv + plans-go/glm-v2/glm-v3/baidu/volc.csv（勿手改）。改数据后运行 build_data.py。
  * 价格单位 ¥/1M tokens。p = 官方牌价 [输入, 输出, 缓存读]（海外=OR美元×7，国产=原厂人民币价）。
  * gp = OpenCode Go 折后价 [额度Q$, 输入, 输出, 缓存读]，由 plans-go.csv 表列$ × 10/额度 × 7 算出。
  * bench = [榜单中位分, 每题平均全口径 token]（llm_benchmark logic）；t0 基准 = Fable 5.1 xhigh。
- * 生成时间：2026-09-06
+ * 生成时间：2026-09-09
  */
 (function () {
   'use strict';
@@ -122,6 +122,13 @@
     { plan: '百度 Token Plan Max 夜间2折', name: 'DeepSeek-V4-Pro (preview)', pin: 0.0396, pout: 0.0396, pc: 0.0396 },
     { plan: '百度 Token Plan Max 夜间2折', name: 'DeepSeek-V4-Flash-0731', pin: 0.0396, pout: 0.0396, pc: 0.0396 },
     { plan: '百度 Token Plan Max 夜间2折', name: 'GLM-5.2', pin: 0.0396, pout: 0.0396, pc: 0.0396 },
+    { plan: '火山方舟 Agent Plan', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 0.1, pout: 0.1, pc: 0.1 },
+    { plan: '火山方舟 Agent Plan', name: 'DeepSeek V4 Pro 0813 (正式版)', pin: 1.1, pout: 1.1, pc: 1.1 },
+    { plan: '火山方舟 Agent Plan', name: 'GLM-5.3', pin: 0.9, pout: 0.9, pc: 0.9 },
+    { plan: '火山方舟 Agent Plan', name: 'GLM-5.3-Flash', pin: 0.1, pout: 0.1, pc: 0.1 },
+    { plan: '火山方舟 Agent Plan', name: 'MiniMax-M3', pin: 0.5, pout: 0.5, pc: 0.5 },
+    { plan: '火山方舟 Agent Plan', name: 'Kimi-K3', pin: 2.0, pout: 2.0, pc: 2.0 },
+    { plan: '火山方舟 Agent Plan Auto', name: 'Kimi-K3 (Auto 限时)', pin: 0.1, pout: 0.1, pc: 0.1 },
     { plan: '智谱 Coding Plan v3 Lite', name: 'GLM-5.3', pin: 0.9395, pout: 3.2677, pc: 0.2315 },
     { plan: '智谱 Coding Plan v3 Lite', name: 'GLM-5.3-Flash', pin: 0.3132, pout: 1.0892, pc: 0.0762 },
     { plan: '智谱 Coding Plan v3 Lite 高峰', name: 'GLM-5.3', pin: 1.8789, pout: 6.5354, pc: 0.4629 },
