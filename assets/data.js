@@ -1,4 +1,4 @@
-/* 自动生成自 benchmark.csv + plans-go/glm-v2/glm-v3/baidu/volc.csv（勿手改）。改数据后运行 build_data.py。
+/* 自动生成自 benchmark.csv + plans-go/glm-v2/glm-v3/baidu/volc/sense.csv（勿手改）。改数据后运行 build_data.py。
  * 价格单位 ¥/1M tokens。p = 官方牌价 [输入, 输出, 缓存读]（海外=OR美元×7，国产=原厂人民币价）。
  * gp = OpenCode Go 折后价 [额度Q$, 输入, 输出, 缓存读]，由 plans-go.csv 表列$ × 10/额度 × 7 算出。
  * bench = [榜单中位分, 每题平均全口径 token]（llm_benchmark logic）；t0 基准 = Fable 5.1 xhigh。
@@ -129,6 +129,21 @@
     { plan: '火山方舟 Agent Plan', name: 'MiniMax-M3', pin: 0.5, pout: 0.5, pc: 0.5 },
     { plan: '火山方舟 Agent Plan', name: 'Kimi-K3', pin: 2.0, pout: 2.0, pc: 2.0 },
     { plan: '火山方舟 Agent Plan Auto', name: 'Kimi-K3 (Auto 限时)', pin: 0.1, pout: 0.1, pc: 0.1 },
+    { plan: 'SenseAudio Token Plan Pro', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 1.3326, pout: 3.9978, pc: 1.3326 },
+    { plan: 'SenseAudio Token Plan Pro', name: 'Qwen3.8-27B', pin: 1.3326, pout: 5.3304, pc: 1.3326 },
+    { plan: 'SenseAudio Token Plan Pro', name: 'GLM-5.3-Flash', pin: 0.3554, pout: 1.2438, pc: 0.3554 },
+    { plan: 'SenseAudio Token Plan Pro', name: 'GLM-5.2 (<32K)', pin: 2.6652, pout: 10.6607, pc: 2.6652 },
+    { plan: 'SenseAudio Token Plan Pro', name: 'GLM-5.2 (≥32K)', pin: 3.5536, pout: 12.4375, pc: 3.5536 },
+    { plan: 'SenseAudio Token Plan Max', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 0.9362, pout: 2.8085, pc: 0.9362 },
+    { plan: 'SenseAudio Token Plan Max', name: 'Qwen3.8-27B', pin: 0.9362, pout: 3.7446, pc: 0.9362 },
+    { plan: 'SenseAudio Token Plan Max', name: 'GLM-5.3-Flash', pin: 0.2496, pout: 0.8738, pc: 0.2496 },
+    { plan: 'SenseAudio Token Plan Max', name: 'GLM-5.2 (<32K)', pin: 1.8723, pout: 7.4893, pc: 1.8723 },
+    { plan: 'SenseAudio Token Plan Max', name: 'GLM-5.2 (≥32K)', pin: 2.4964, pout: 8.7375, pc: 2.4964 },
+    { plan: 'SenseAudio Token Plan Ultra', name: 'DeepSeek V4 Flash 0731 (正式版)', pin: 0.6358, pout: 1.9075, pc: 0.6358 },
+    { plan: 'SenseAudio Token Plan Ultra', name: 'Qwen3.8-27B', pin: 0.6358, pout: 2.5433, pc: 0.6358 },
+    { plan: 'SenseAudio Token Plan Ultra', name: 'GLM-5.3-Flash', pin: 0.1696, pout: 0.5934, pc: 0.1696 },
+    { plan: 'SenseAudio Token Plan Ultra', name: 'GLM-5.2 (<32K)', pin: 1.2717, pout: 5.0866, pc: 1.2717 },
+    { plan: 'SenseAudio Token Plan Ultra', name: 'GLM-5.2 (≥32K)', pin: 1.6955, pout: 5.9344, pc: 1.6955 },
     { plan: '智谱 Coding Plan v3 Lite', name: 'GLM-5.3', pin: 0.9395, pout: 3.2677, pc: 0.2315 },
     { plan: '智谱 Coding Plan v3 Lite', name: 'GLM-5.3-Flash', pin: 0.3132, pout: 1.0892, pc: 0.0762 },
     { plan: '智谱 Coding Plan v3 Lite 高峰', name: 'GLM-5.3', pin: 1.8789, pout: 6.5354, pc: 0.4629 },
