@@ -101,7 +101,7 @@
       ctx.fillText(cfg.xFmt ? cfg.xFmt(xv) : fmtAxis(xv), px(xv), PAD.t + plotH + 6);
     }
 
-    // 277K / 关键点标记
+    // 272K（Codex 默认窗口）/ 关键点标记
     if (cfg.marker) {
       var mx = px(cfg.marker.x);
       ctx.save();

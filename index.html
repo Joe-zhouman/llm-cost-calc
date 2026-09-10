@@ -63,7 +63,7 @@
         </div>
         <div class="readout" id="curve-readout"></div>
       </div>
-      <p class="page-note">计费公式：花费(C) = C·R·输入价 + C·(1−R)·输出价 + (1+2+…+⌊C/x⌋)·x·缓存价。C 为上下文（K tokens），每次请求新增 x K，新增部分按输入价 R·x、输出价 (1−R)·x 计费，同时全量上下文按缓存读价重收（第 k 次请求收 k·x）。R、x 在顶部设置条调整。曲线横轴 1K–1M 上下文，虚线为 277K（Codex 默认窗口）。</p>
+      <p class="page-note">计费公式：花费(C) = C·R·输入价 + C·(1−R)·输出价 + (1+2+…+⌊C/x⌋)·x·缓存价。C 为上下文（K tokens），每次请求新增 x K，新增部分按输入价 R·x、输出价 (1−R)·x 计费，同时全量上下文按缓存读价重收（第 k 次请求收 k·x）。R、x 在顶部设置条调整。曲线横轴 1K–1M 上下文，虚线为 272K（Codex 默认窗口）。</p>
     </section>
 
     <!-- 2 双模型对比 -->
@@ -106,7 +106,7 @@
         </div>
         <div class="readout" id="cmp-readout"></div>
       </div>
-      <p class="page-note">两条累计费用曲线按相同上下文对比（每模型 1K/请求）。虚线为 277K（Codex 默认窗口）。</p>
+      <p class="page-note">两条累计费用曲线按相同上下文对比（每模型 1K/请求）。虚线为 272K（Codex 默认窗口）。</p>
     </section>
 
     <!-- 3 API 价格榜（原 277K 价格榜） -->
@@ -114,8 +114,9 @@
       <div class="card">
         <div class="bar-list" id="rank277-list"></div>
         <div class="page-note inline-note"><ul>
-          <li>按爬到 277K 上下文（Codex 默认窗口）时的累计花费排名：未做榜单校准，官方牌价，使用顶部设置条的全局 x、R 参数。</li>
-          <li>爬到 277K 需 ⌊277/x⌋ 次请求。</li>
+          <li>按爬到 272K 上下文（Codex CLI 默认模型 catalog 窗口）时的累计花费排名：未做榜单校准，官方牌价，使用顶部设置条的全局 x、R 参数。</li>
+          <li>爬到 272K 需 ⌊272/x⌋ 次请求。</li>
+          <li>窗口口径（2026-09 查证）：272,000 为 Codex CLI 默认模型 catalog 的 raw 值，95% 有效显示约 258K、自动压缩阈值约 244.8K（90%）；部分模型/账户的服务端上限已 rollout 至 872K。</li>
         </ul></div>
       </div>
     </section>
@@ -151,7 +152,7 @@
         </div>
         <div class="readout" id="calib-readout"></div>
       </div>
-      <p class="page-note">校准口径：α = √(t榜/t₀)，t₀ 为 Fable 5.1 的榜单 token（40498）；校准把每请求新增上下文改为 x = α——token 效率低（T榜大）的模型每请求新增更多上下文，同请求数下上下文更大、花费更高，到达 277K 所需请求数更少；效率高的模型爬得慢、花费低。虚线为到达 277K 上下文所需的请求数。无榜单行的模型按 α=1（未校准）处理。</p>
+      <p class="page-note">校准口径：α = √(t榜/t₀)，t₀ 为 Fable 5.1 的榜单 token（40498）；校准把每请求新增上下文改为 x = α——token 效率低（T榜大）的模型每请求新增更多上下文，同请求数下上下文更大、花费更高，到达 272K 所需请求数更少；效率高的模型爬得慢、花费低。虚线为到达 272K 上下文所需的请求数。无榜单行的模型按 α=1（未校准）处理。</p>
     </section>
 
     <!-- 5 校准对比 -->

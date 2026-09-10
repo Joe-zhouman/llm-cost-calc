@@ -17,7 +17,7 @@
 
   var COLOR_A = '#4c72b0';
   var COLOR_B = '#c44e52';
-  var KEY_CTX = 277; // Codex 默认窗口
+  var KEY_CTX = 272; // Codex CLI 默认模型 catalog 窗口（raw 272,000；95% 有效显示约 258K）
 
   // ---------- 状态 ----------
   // 价格已统一为人民币（海外模型美元牌价×7 已折算进数据），全部 ¥ 展示
@@ -208,7 +208,7 @@
     window.Charts.line($('curve-chart'), {
       series: [{ name: name, color: COLOR_A, points: ctxSample(p, state.gx, state.R) }],
       xLabel: 'K tokens 上下文',
-      marker: { x: KEY_CTX, label: '277K' },
+      marker: { x: KEY_CTX, label: KEY_CTX + 'K' },
       xFmt: function (v) { return num(v, 0) + 'K'; },
       yFmt: money
     });
@@ -216,9 +216,9 @@
     var n277 = reqAtCtx(KEY_CTX, state.gx);
     var cachePart = state.gx * p.pc * n277 * (n277 + 1) / 2 / 1000;
     readout($('curve-readout'), [
-      ['277K 累计', money(c277)],
+      [(KEY_CTX + 'K 累计'), money(c277)],
       ['其中缓存重收', money(cachePart) + '（' + num(cachePart / c277 * 100, 0) + '%）'],
-      ['爬到 277K 需', n277 + ' 请求'],
+      ['爬到 ' + KEY_CTX + 'K 需', n277 + ' 请求'],
       ['价格', priceStr(p.pin) + ' / ' + priceStr(p.pout) + ' / 缓存' + priceStr(p.pc)]
     ]);
   }
@@ -289,21 +289,21 @@
     window.Charts.line($('cmp-chart'), {
       series: series,
       xLabel: 'K tokens 上下文',
-      marker: { x: KEY_CTX, label: '277K' },
+      marker: { x: KEY_CTX, label: KEY_CTX + 'K' },
       xFmt: function (v) { return num(v, 0) + 'K'; },
       yFmt: money
     });
     var cA = costAtCtx(KEY_CTX, pA, state.gx, state.R), cB = costAtCtx(KEY_CTX, pB, state.gx, state.R);
     readout($('cmp-readout'), [
-      ['A @277K', money(cA)],
-      ['B @277K', money(cB)],
+      ['A @' + KEY_CTX + 'K', money(cA)],
+      ['B @' + KEY_CTX + 'K', money(cB)],
       ['B/A', num(cB / cA, 3) + 'x'],
       ['A 价格', priceStr(pA.pin) + '/' + priceStr(pA.pout) + '/' + priceStr(pA.pc)],
       ['B 价格', priceStr(pB.pin) + '/' + priceStr(pB.pout) + '/' + priceStr(pB.pc)]
     ]);
   }
 
-  // ---------- 页面 3：277K 价格榜（官方牌价） ----------
+  // ---------- 页面 3：API 价格榜（原 277K 价格榜，标记点已改 272K） ----------
   function initRank277() {
     renderRank277();
   }
@@ -349,7 +349,7 @@
     var a = (m && m.bench) ? alphaOf(m) : 1;
     var x = a;
     var P = Math.min(2000, Math.max(1, parseInt($('calib-req').value, 10) || 300));
-    var P277 = reqAtCtx(KEY_CTX, x); // 爬到 277K 需 ⌊277/x⌋ 次
+    var P277 = reqAtCtx(KEY_CTX, x); // 爬到标记窗口需 ⌊KEY_CTX/x⌋ 次
     $('calib-req').value = String(P);
     var noteEl = $('calib-note');
     var parts = [];
@@ -365,7 +365,7 @@
     window.Charts.line($('calib-chart'), {
       series: [{ name: name, color: COLOR_A, points: pts }],
       xLabel: '请求数',
-      marker: { x: P277, label: '到 277K 需 ' + P277 + ' 请求' },
+      marker: { x: P277, label: '到 ' + KEY_CTX + 'K 需 ' + P277 + ' 请求' },
       xFmt: function (v) { return num(v, 0); },
       yFmt: money
     });
@@ -374,7 +374,7 @@
       ['x=α', num(x, 3)],
       [P + ' 请求爬到', Kfmt(P * x)],
       ['累计费用', money(costAtReq(P, p, x, state.R))],
-      ['到 277K 需', P277 + ' 请求']
+      ['到 ' + KEY_CTX + 'K 需', P277 + ' 请求']
     ]);
   }
 
