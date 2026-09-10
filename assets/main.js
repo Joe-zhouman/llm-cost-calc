@@ -535,23 +535,49 @@
     var bmodel = byId[baseId];
     var baseEff = costAtReq(RANK_P, getPrices(bmodel, 'or'), factorOf(bmodel, mode), state.R) / scoreNorm(bmodel.bench[0], baseId);
     var noteEl = $('rank300-note');
+    var lowestMed = (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })();
+    var items;
     if (rank300Sort === 'alpha-cost') {
-      noteEl.textContent = '校准口径 α=√(t榜/t0)、x=α 下发 ' + RANK_P + ' 次请求的累计花费（官方牌价，R=' + num(state.R, 2) + '）。效率低（T榜大）的模型每请求新增更多上下文、花费更高。';
+      items = [
+        '校准口径 α=√(t榜/t0)、x=α 下发 ' + RANK_P + ' 次请求的累计花费（官方牌价，R=' + num(state.R, 2) + '）。',
+        '效率低（T榜大）的模型每请求新增更多上下文、花费更高。'
+      ];
     } else if (rank300Sort === 'alpha-eff') {
-      noteEl.textContent = 'α折算累计花费 ÷ 分数修正S。基准 Sonnet 5（med ' + num(byId['sonnet5'].bench[0], 2) + '）=1：其上线性归一（GPT-6 Astra=2，不开根号），其下按对数惩罚（最末 ' + (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })() + '）=0.1，低分模型被重罚。显示值为性价比指数：折算费用÷S 再除以基准模型自身的修正费用（Sonnet 5=1.00），无量纲、越小越好。';
+      items = [
+        'α折算累计花费 ÷ 分数修正S。基准 Sonnet 5（med ' + num(byId['sonnet5'].bench[0], 2) + '）=1：其上线性归一（GPT-6 Astra=2，不开根号），其下按对数惩罚（最末 ' + lowestMed + '）=0.1，低分模型被重罚。',
+        '显示值为性价比指数：折算费用÷S 再除以基准模型自身的修正费用（Sonnet 5=1.00），无量纲、越小越好。'
+      ];
     } else if (rank300Sort === 'kill') {
-      noteEl.textContent = '斩杀线口径：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1——显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀、低于线的才打得起 API。其余口径同「α 费用/分数修正（Sonnet 5 基准）」。';
+      items = [
+        '斩杀线口径：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1。',
+        '显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀、低于线的才打得起 API。',
+        '其余口径同「α 费用/分数修正（Sonnet 5 基准）」。'
+      ];
     } else if (rank300Sort === 'kill-custom') {
-      noteEl.textContent = '斩杀线口径·自选基准：分数修正S 以「' + byId[baseId].name + '」（med ' + num(byId[baseId].bench[0], 2) + '）=1——显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀。基准模型用上方下拉自选。';
+      items = [
+        '斩杀线口径·自选基准：分数修正S 以「' + byId[baseId].name + '」（med ' + num(byId[baseId].bench[0], 2) + '）=1。',
+        '显示值为指数，基准模型自身 =1.00 即斩杀线，>1 被斩杀。',
+        '基准模型用上方下拉自选。'
+      ];
     } else if (rank300Sort === 'beta-cost') {
-      noteEl.textContent = 'β=t榜/t0 不开根号（x=β）：不做日常压缩的极限口径，效率差距全额体现，仅作参考。';
+      items = ['β=t榜/t0 不开根号（x=β）：不做日常压缩的极限口径，效率差距全额体现，仅作参考。'];
     } else if (rank300Sort === 'beta-eff') {
-      noteEl.textContent = 'β（极限口径）累计花费 ÷ 同一分数修正S（Sonnet 5=1、GPT-6 Astra=2、最末=0.1）。显示值为指数（Sonnet 5=1.00），无量纲，双极限参考、越小越好。';
+      items = [
+        'β（极限口径）累计花费 ÷ 同一分数修正S（Sonnet 5=1、GPT-6 Astra=2、最末=0.1）。',
+        '显示值为指数（Sonnet 5=1.00），无量纲，双极限参考、越小越好。'
+      ];
     } else if (rank300Sort === 'beta-kill-custom') {
-      noteEl.textContent = 'β（极限口径）斩杀线·自选基准：分数修正S 以「' + byId[baseId].name + '」（med ' + num(byId[baseId].bench[0], 2) + '）=1，β 不开根号全额放大效率差。显示值为指数：基准自身 =1.00 即斩杀线，>1 被斩杀。';
+      items = [
+        'β（极限口径）斩杀线·自选基准：分数修正S 以「' + byId[baseId].name + '」（med ' + num(byId[baseId].bench[0], 2) + '）=1，β 不开根号全额放大效率差。',
+        '显示值为指数：基准自身 =1.00 即斩杀线，>1 被斩杀。'
+      ];
     } else {
-      noteEl.textContent = 'β（极限口径）斩杀线：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1，β 不开根号全额放大效率差。显示值为指数：DS-V4-Flash 自身 =1.00 即斩杀线，>1 被斩杀。双极限参考。';
+      items = [
+        'β（极限口径）斩杀线：分数修正S 的基准换成 DeepSeek V4 Flash（med ' + num(byId['dsv4flash'].bench[0], 2) + '）=1，β 不开根号全额放大效率差。',
+        '显示值为指数：DS-V4-Flash 自身 =1.00 即斩杀线，>1 被斩杀。双极限参考。'
+      ];
     }
+    noteList(noteEl, items);
     rows.sort(function (a, b) {
       return effMode ? a.eff - b.eff : a.cost - b.cost;
     });
@@ -617,6 +643,12 @@
   }
   // 去括号裸名：「DeepSeek V4 Flash 0731 (正式版)」→「DeepSeek V4 Flash 0731」，用于模型筛选合并档位行
   function bareName(s) { return String(s).replace(/\s*\([^)]*\)\s*$/, ''); }
+  // 说明列表渲染：一条说明一个 li（口径说明不挤成一坨）
+  function noteList(el, items) {
+    var h = '<ul>';
+    for (var i = 0; i < items.length; i++) h += '<li>' + items[i] + '</li>';
+    el.innerHTML = h + '</ul>';
+  }
   // 按模型名找 benchmark 模型对象（带官方牌价）；plan 侧名字可能带/不带档位后缀，去括号后精确匹配
   function officialModelOf(name) {
     var bare = bareName(name);
@@ -666,7 +698,18 @@
         '</div>';
     }
     $('gorank-list').innerHTML = html;
-    $('gorank-note').textContent = '各订阅计划折算后的单价，按折算 token 单价升序（单价 = 0.95×(命中×缓存读 + (1−命中)×输入) + 0.05×输出，输入占比 95%、命中率用上方滑块调）。OpenCode Go：折后 = 表列价 × 10/额度，DeepSeek 按非高峰档，DS V4.1 Flash 限时 $60 额度档（刊例 $15，活动结束改回）；智谱 Coding Plan v2：实测周额度按 Lite 的 5×（Pro）/20×（Max）放大（GLM-5.3 50M/周、Flash 125M/周，高峰约 1/3，额度不分输入输出缓存）÷ 月费；v3（Lite ¥118/Pro ¥538/Max ¥1078 每月）：按官方积分系数折算（GLM-5.3 6.9/1.7/24、Flash 2.3/0.56/8，非高峰 5 折），积分额度按 Lite 的 5×/20×。百度千帆 Token Plan 个人版（Mini ¥9.9/Lite ¥40/Pro ¥200/Max ¥600 每月，月额度 1000万/4200万/2.3亿/7亿 tokens）：Token制不区分输入/输出/缓存→三价相等，额度多模型共享、按模型单列；夜间闲时（每日21:00–次日8:00）指定模型（DS-V4-Pro preview、DS-V4-Flash-0731（核心）、GLM-5.2；DS-V4-Flash 预览版 9-29 下线不计）按 2 折扣 token 另列夜间条目；deepseek-v4-pro-0813 按 1.8× 抵扣（条目已按 1.8 计）。GLM-5.1 与 kimi-k2.6（9-29 下线）不列。积分制官方未公开系数表，不纳入。火山方舟 Agent Plan（Small ¥40/Medium ¥200/Large ¥500/Max ¥1000 每月，月额度 2万/10万/25万/50万 AFP，四档每 AFP 单价同为 0.002 元→折算价与档位无关，按模型单列）：AFP=(输入×系数+输出×系数)/10000，折算价=系数×0.2 元/M；v4-flash=0731、v4-pro=0813 均为正式版；套餐内无缓存折扣项→缓存按输入同价；GLM-5.3-Flash 限时系数 0.25（至 9-11）未计入；Auto 模式限时（至 11-08）系数 0.5 路由 Kimi-K3，另列条目；豆包 seed 系列与 kimi-k2.7-code 榜单未跟踪不列。SenseAudio Token Plan（商汤旗下，Pro ¥199/224万、Max ¥699/1120万、Ultra ¥1899/4480万 积分每月，三档档位差价→每档每模型单列）：积分池制、1 元=5,000 积分，套餐内文本积分消耗=API 牌价×5000（超额现金同锚 1:5000，音频/同传积分价均=元价×5000）→ 折算价=牌价×面值折扣率（Pro 4.4折/Max 3.1折/Ultra 2.1折）；平台文本无缓存价→缓存按输入同价；GLM-5.2 按平台阶梯 <32K/≥32K 两档单列；Lite ¥36/Plus ¥99 文本面值不打折（约 1.8×/1.4×牌价）不列；自研 S2/S1 系列与 M2.7/K2.6/豆包 榜单未跟踪或已下线不列。腾讯 TokenHub Token Plan 个人版（通用线 Lite ¥39/780积分、Standard ¥99/1980、Pro ¥299/5980、Max ¥599/11980；Hy 线 ¥28/560、¥78/1560、¥238/4760、¥468/9360——两线四档元/积分同为 0.05 元，折算价=积分价×0.05）：两种抵扣算法并存——8-31 前上架模型（旧逻辑）三类 token 同价、积分价随档位（通用组 22.285/19.8/18.687/18.43，Hy 组 16/15.6/14.875/14.4，DS-V4-Flash/Pro 与 Hy3 按档单列）；8-31 后上架模型（新逻辑）输入/输出/缓存三分价、档位无关（GLM-5.3-Flash 16/56/4.6、GLM-5.3 160/560/40、Kimi-K3 400/2000/40、MiniMax-M3 ≤512K 42/168/8.4，折算恰为各原厂牌价）；限时优惠单列：GLM-5.3 85折、Kimi-K3 95折、MiniMax-M3 5折、Hy3-hy3-202608 5折（均至 9-30），GLM-5.3-Flash 5折（9-10 止）未列；通用 Max 刊例表印 8.43 疑为 18.43 笔误（预估表 11980÷18.43=65,000 万 tokens 精确吻合），按 18.43 计；MiniMax-M3 >512K 档与 Auto(tc-code-latest)、M2.7、GLM-5/5.1/5.2、Hy4 preview 榜单未跟踪不列。官方 API 牌价作为独立条目列入同一排序（每个模型只列一次），与套餐条目同公式，便于直接对比。支持按套餐/按模型筛选：模型筛选按去括号名合并 (max)/(高峰)/(限时) 等档位行，官方牌价条目一并命中。';
+    noteList($('gorank-note'), [
+    '各订阅计划折算后的单价，按折算 token 单价升序（单价 = 0.95×(命中×缓存读 + (1−命中)×输入) + 0.05×输出，输入占比 95%、命中率用上方滑块调）。',
+    'OpenCode Go：折后 = 表列价 × 10/额度，DeepSeek 按非高峰档，DS V4.1 Flash 限时 $60 额度档（刊例 $15，活动结束改回）；',
+    '智谱 Coding Plan v2：实测周额度按 Lite 的 5×（Pro）/20×（Max）放大（GLM-5.3 50M/周、Flash 125M/周，高峰约 1/3，额度不分输入输出缓存）÷ 月费；',
+    'v3（Lite ¥118/Pro ¥538/Max ¥1078 每月）：按官方积分系数折算（GLM-5.3 6.9/1.7/24、Flash 2.3/0.56/8，非高峰 5 折），积分额度按 Lite 的 5×/20×。',
+    '百度千帆 Token Plan 个人版（Mini ¥9.9/Lite ¥40/Pro ¥200/Max ¥600 每月，月额度 1000万/4200万/2.3亿/7亿 tokens）：Token制不区分输入/输出/缓存→三价相等，额度多模型共享、按模型单列；夜间闲时（每日21:00–次日8:00）指定模型（DS-V4-Pro preview、DS-V4-Flash-0731（核心）、GLM-5.2；DS-V4-Flash 预览版 9-29 下线不计）按 2 折扣 token 另列夜间条目；deepseek-v4-pro-0813 按 1.8× 抵扣（条目已按 1.8 计）。GLM-5.1 与 kimi-k2.6（9-29 下线）不列。积分制官方未公开系数表，不纳入。',
+    '火山方舟 Agent Plan（Small ¥40/Medium ¥200/Large ¥500/Max ¥1000 每月，月额度 2万/10万/25万/50万 AFP，四档每 AFP 单价同为 0.002 元→折算价与档位无关，按模型单列）：AFP=(输入×系数+输出×系数)/10000，折算价=系数×0.2 元/M；v4-flash=0731、v4-pro=0813 均为正式版；套餐内无缓存折扣项→缓存按输入同价；GLM-5.3-Flash 限时系数 0.25（至 9-11）未计入；Auto 模式限时（至 11-08）系数 0.5 路由 Kimi-K3，另列条目；豆包 seed 系列与 kimi-k2.7-code 榜单未跟踪不列。',
+    'SenseAudio Token Plan（商汤旗下，Pro ¥199/224万、Max ¥699/1120万、Ultra ¥1899/4480万 积分每月，三档档位差价→每档每模型单列）：积分池制、1 元=5,000 积分，套餐内文本积分消耗=API 牌价×5000（超额现金同锚 1:5000，音频/同传积分价均=元价×5000）→ 折算价=牌价×面值折扣率（Pro 4.4折/Max 3.1折/Ultra 2.1折）；平台文本无缓存价→缓存按输入同价；GLM-5.2 按平台阶梯 <32K/≥32K 两档单列；Lite ¥36/Plus ¥99 文本面值不打折（约 1.8×/1.4×牌价）不列；自研 S2/S1 系列与 M2.7/K2.6/豆包 榜单未跟踪或已下线不列。',
+    '腾讯 TokenHub Token Plan 个人版（通用线 Lite ¥39/780积分、Standard ¥99/1980、Pro ¥299/5980、Max ¥599/11980；Hy 线 ¥28/560、¥78/1560、¥238/4760、¥468/9360——两线四档元/积分同为 0.05 元，折算价=积分价×0.05）：两种抵扣算法并存——8-31 前上架模型（旧逻辑）三类 token 同价、积分价随档位（通用组 22.285/19.8/18.687/18.43，Hy 组 16/15.6/14.875/14.4，DS-V4-Flash/Pro 与 Hy3 按档单列）；8-31 后上架模型（新逻辑）输入/输出/缓存三分价、档位无关（GLM-5.3-Flash 16/56/4.6、GLM-5.3 160/560/40、Kimi-K3 400/2000/40、MiniMax-M3 ≤512K 42/168/8.4，折算恰为各原厂牌价）；限时优惠单列：GLM-5.3 85折、Kimi-K3 95折、MiniMax-M3 5折、Hy3-hy3-202608 5折（均至 9-30），GLM-5.3-Flash 5折（9-10 止）未列；通用 Max 刊例表印 8.43 疑为 18.43 笔误（预估表 11980÷18.43=65,000 万 tokens 精确吻合），按 18.43 计；MiniMax-M3 >512K 档与 Auto(tc-code-latest)、M2.7、GLM-5/5.1/5.2、Hy4 preview 榜单未跟踪不列。',
+    '官方 API 牌价作为独立条目列入同一排序（每个模型只列一次），与套餐条目同公式，便于直接对比。',
+    '支持按套餐/按模型筛选：模型筛选按去括号名合并 (max)/(高峰)/(限时) 等档位行，官方牌价条目一并命中。'
+  ]);
   }
 
   // ---------- Tab 切换 ----------
