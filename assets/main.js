@@ -18,6 +18,14 @@
   var COLOR_A = '#4c72b0';
   var COLOR_B = '#c44e52';
   var KEY_CTX = 272; // Codex CLI 默认模型 catalog 窗口（raw 272,000；95% 有效显示约 258K）
+  var LONG_CTX = KEY_CTX; // GPT 系长上下文计费阈值（>272K 整请求按长档价，官方规则与窗口标记同值）
+
+  // 长上下文档价（GPT 系官方规则）：输入/缓存读 ×2、输出 ×1.5，对 >272K 的整个请求生效；
+  // t = {pin2, pout2, pc2}（由 longTier(m) 生成），无长档模型传 null
+  function longTier(m) {
+    if (!m || !m.longctx || !m.p) return null;
+    return { pin2: m.p[0] * 2, pout2: m.p[1] * 1.5, pc2: m.p[2] * 2 };
+  }
 
   // ---------- 状态 ----------
   // 价格已统一为人民币（海外模型美元牌价×7 已折算进数据），全部 ¥ 展示
@@ -65,13 +73,22 @@
 
   // ---------- 计费 ----------
   // p = {pin, pout, pc}（$/1M）；C/x 单位 K tokens，返回 $ 累计花费
-  function costAtCtx(C, p, x, R) {
+  function costAtCtx(C, p, x, R, t) {
     var n = Math.floor(C / x + 1e-9); // ⌊C/x⌋：爬到 C 发的请求数
-    return (C * R * p.pin + C * (1 - R) * p.pout + x * p.pc * n * (n + 1) / 2) / 1000;
+    if (!t) return (C * R * p.pin + C * (1 - R) * p.pout + x * p.pc * n * (n + 1) / 2) / 1000;
+    // 长上下文分段：请求 k 的 prompt = k·x > LONG_CTX → 整请求按长档价（k0 = 最后一个短档请求）
+    var k0 = Math.min(Math.floor(LONG_CTX / x + 1e-9), n);
+    var newCost = R * (k0 * x * p.pin + (C - k0 * x) * t.pin2) + (1 - R) * (k0 * x * p.pout + (C - k0 * x) * t.pout2);
+    var cacheCost = x * (p.pc * k0 * (k0 + 1) / 2 + t.pc2 * (n * (n + 1) - k0 * (k0 + 1)) / 2);
+    return (newCost + cacheCost) / 1000;
   }
   // 按请求数参数化（校准页用）：P 次请求爬到 P·x K，无取整问题
-  function costAtReq(P, p, x, R) {
-    return (P * x * (R * p.pin + (1 - R) * p.pout) + x * p.pc * P * (P + 1) / 2) / 1000;
+  function costAtReq(P, p, x, R, t) {
+    if (!t) return (P * x * (R * p.pin + (1 - R) * p.pout) + x * p.pc * P * (P + 1) / 2) / 1000;
+    var k0 = Math.min(Math.floor(LONG_CTX / x + 1e-9), P);
+    var newCost = x * (R * (k0 * p.pin + (P - k0) * t.pin2) + (1 - R) * (k0 * p.pout + (P - k0) * t.pout2));
+    var cacheCost = x * (p.pc * k0 * (k0 + 1) / 2 + t.pc2 * (P * (P + 1) - k0 * (k0 + 1)) / 2);
+    return (newCost + cacheCost) / 1000;
   }
   // 校准：α = √(t榜/t0)；校准后 x = α——效率低的模型（T榜大）每请求新增更多上下文，
   // 同请求数下上下文更大、花费更高；效率高的模型爬得慢。无榜单行按 α=1。
@@ -191,9 +208,9 @@
     };
   }
   // 上下文曲线采样：1K–1M，步长 1K
-  function ctxSample(p, x, R) {
+  function ctxSample(p, x, R, t) {
     var arr = [];
-    for (var i = 1; i <= 1000; i++) arr.push({ x: i, y: costAtCtx(i, p, x, R) });
+    for (var i = 1; i <= 1000; i++) arr.push({ x: i, y: costAtCtx(i, p, x, R, t) });
     return arr;
   }
   function renderCurve() {
@@ -201,18 +218,19 @@
     var isCustom = id === CUSTOM_ID;
     var name = modelName(id, 'curve-customname');
     var p = customPrices('curve');
+    var tier = longTier(byId[id]);
     var noteEl = $('curve-note');
     var nt = (!isCustom && byId[id] && byId[id].note) ? byId[id].note : '';
     if (nt) { noteEl.textContent = nt; noteEl.classList.remove('hidden'); }
     else noteEl.classList.add('hidden');
     window.Charts.line($('curve-chart'), {
-      series: [{ name: name, color: COLOR_A, points: ctxSample(p, state.gx, state.R) }],
+      series: [{ name: name, color: COLOR_A, points: ctxSample(p, state.gx, state.R, tier) }],
       xLabel: 'K tokens 上下文',
       marker: { x: KEY_CTX, label: KEY_CTX + 'K' },
       xFmt: function (v) { return num(v, 0) + 'K'; },
       yFmt: money
     });
-    var c277 = costAtCtx(KEY_CTX, p, state.gx, state.R);
+    var c277 = costAtCtx(KEY_CTX, p, state.gx, state.R, tier);
     var n277 = reqAtCtx(KEY_CTX, state.gx);
     var cachePart = state.gx * p.pc * n277 * (n277 + 1) / 2 / 1000;
     readout($('curve-readout'), [
@@ -277,6 +295,7 @@
     var nameB = modelName(idB, 'cmp-customname-b');
     var pA = sidedPrices('cmp', 'a');
     var pB = sidedPrices('cmp', 'b');
+    var tA = longTier(byId[idA]), tB = longTier(byId[idB]);
     var noteEl = $('cmp-note');
     var notes = [];
     if (idA !== CUSTOM_ID && byId[idA] && byId[idA].note) notes.push(byId[idA].note);
@@ -284,8 +303,8 @@
     if (notes.length) { noteEl.textContent = notes.join('；'); noteEl.classList.remove('hidden'); }
     else noteEl.classList.add('hidden');
     var series = [];
-    series.push({ name: 'A ' + nameA, color: COLOR_A, points: ctxSample(pA, state.gx, state.R) });
-    series.push({ name: 'B ' + nameB, color: COLOR_B, points: ctxSample(pB, state.gx, state.R) });
+    series.push({ name: 'A ' + nameA, color: COLOR_A, points: ctxSample(pA, state.gx, state.R, tA) });
+    series.push({ name: 'B ' + nameB, color: COLOR_B, points: ctxSample(pB, state.gx, state.R, tB) });
     window.Charts.line($('cmp-chart'), {
       series: series,
       xLabel: 'K tokens 上下文',
@@ -293,7 +312,7 @@
       xFmt: function (v) { return num(v, 0) + 'K'; },
       yFmt: money
     });
-    var cA = costAtCtx(KEY_CTX, pA, state.gx, state.R), cB = costAtCtx(KEY_CTX, pB, state.gx, state.R);
+    var cA = costAtCtx(KEY_CTX, pA, state.gx, state.R, tA), cB = costAtCtx(KEY_CTX, pB, state.gx, state.R, tB);
     readout($('cmp-readout'), [
       ['A @' + KEY_CTX + 'K', money(cA)],
       ['B @' + KEY_CTX + 'K', money(cB)],
@@ -316,8 +335,8 @@
       rows.push({
         label: m.name,
         sub: priceStr(p.pin) + '/' + priceStr(p.pout) + '/' + priceStr(p.pc),
-        value: costAtCtx(KEY_CTX, p, state.gx, state.R),
-        valueText: money(costAtCtx(KEY_CTX, p, state.gx, state.R))
+        value: costAtCtx(KEY_CTX, p, state.gx, state.R, longTier(m)),
+        valueText: money(costAtCtx(KEY_CTX, p, state.gx, state.R, longTier(m)))
       });
     }
     rows.sort(function (a, b) { return a.value - b.value; });
@@ -345,6 +364,7 @@
     var m = byId[id];
     var name = modelName(id, 'calib-customname');
     var p = customPrices('calib');
+    var tier = longTier(m);
     // 校准只看榜单 token（T榜），与价格无关；自定义模型无榜单行 → α=1（未校准）
     var a = (m && m.bench) ? alphaOf(m) : 1;
     var x = a;
@@ -361,7 +381,7 @@
 
     var Pmax = Math.max(P, Math.min(P277 + 10, 2000));
     var pts = [];
-    for (var i = 1; i <= Pmax; i++) pts.push({ x: i, y: costAtReq(i, p, x, state.R) });
+    for (var i = 1; i <= Pmax; i++) pts.push({ x: i, y: costAtReq(i, p, x, state.R, tier) });
     window.Charts.line($('calib-chart'), {
       series: [{ name: name, color: COLOR_A, points: pts }],
       xLabel: '请求数',
@@ -373,7 +393,7 @@
       ['α', num(a, 3)],
       ['x=α', num(x, 3)],
       [P + ' 请求爬到', Kfmt(P * x)],
-      ['累计费用', money(costAtReq(P, p, x, state.R))],
+      ['累计费用', money(costAtReq(P, p, x, state.R, tier))],
       ['到 ' + KEY_CTX + 'K 需', P277 + ' 请求']
     ]);
   }
@@ -408,6 +428,7 @@
     var nameB = modelName(idB, 'cc-customname-b');
     var pA = sidedPrices('cc', 'a');
     var pB = sidedPrices('cc', 'b');
+    var tA = longTier(mA), tB = longTier(mB);
     var P = Math.min(2000, Math.max(1, parseInt($('cc-req').value, 10) || 300));
     $('cc-req').value = String(P);
     var noteEl = $('cc-note');
@@ -420,9 +441,9 @@
     // 校准只看榜单 token（T榜），与价格无关；无榜单行（含自定义）→ α=1
     var xA = (mA && mA.bench) ? xCalib(mA) : 1;
     var xB = (mB && mB.bench) ? xCalib(mB) : 1;
-    function mk(p, x, color, name) {
+    function mk(p, x, color, name, t) {
       var arr = [];
-      for (var i = 1; i <= P; i++) arr.push({ x: i, y: costAtReq(i, p, x, state.R) });
+      for (var i = 1; i <= P; i++) arr.push({ x: i, y: costAtReq(i, p, x, state.R, t) });
       return { name: name, color: color, points: arr };
     }
     function mkCtx(x, color, name) {
@@ -433,8 +454,8 @@
     var ctxSeries = [], costSeries = [];
     ctxSeries.push(mkCtx(xA, COLOR_A, 'A ' + nameA));
     ctxSeries.push(mkCtx(xB, COLOR_B, 'B ' + nameB));
-    costSeries.push(mk(pA, xA, COLOR_A, 'A ' + nameA));
-    costSeries.push(mk(pB, xB, COLOR_B, 'B ' + nameB));
+    costSeries.push(mk(pA, xA, COLOR_A, 'A ' + nameA, tA));
+    costSeries.push(mk(pB, xB, COLOR_B, 'B ' + nameB, tB));
     window.Charts.line($('cc-chart-ctx'), {
       series: ctxSeries, xLabel: '请求数', marker: null,
       xFmt: function (v) { return num(v, 0); },
@@ -445,7 +466,7 @@
       xFmt: function (v) { return num(v, 0); },
       yFmt: money
     });
-    var cA = costAtReq(P, pA, xA, state.R), cB = costAtReq(P, pB, xB, state.R);
+    var cA = costAtReq(P, pA, xA, state.R, tA), cB = costAtReq(P, pB, xB, state.R, tB);
     readout($('cc-readout'), [
       ['A: ' + P + ' 请求', Kfmt(P * xA) + ' / ' + money(cA)],
       ['B: ' + P + ' 请求', Kfmt(P * xB) + ' / ' + money(cB)],
@@ -527,13 +548,13 @@
       var p = getPrices(m, 'or');
       if (!p) continue;
       var x = factorOf(m, mode); // α 或 β 直接作为 x（效率低→每请求新增更多上下文→同请求数花费更高）
-      var c = costAtReq(RANK_P, p, x, state.R);
+      var c = costAtReq(RANK_P, p, x, state.R, longTier(m));
       var med = m.bench[0];
       rows.push({ m: m, cost: c, med: med, eff: c / scoreNorm(med, baseId) });
     }
     // 指数基准：S 基准模型自身的折算修正费用（其 S=1）→ 指数 = (费用÷S) ÷ 基准，基准模型恒为 1.00
     var bmodel = byId[baseId];
-    var baseEff = costAtReq(RANK_P, getPrices(bmodel, 'or'), factorOf(bmodel, mode), state.R) / scoreNorm(bmodel.bench[0], baseId);
+    var baseEff = costAtReq(RANK_P, getPrices(bmodel, 'or'), factorOf(bmodel, mode), state.R, longTier(bmodel)) / scoreNorm(bmodel.bench[0], baseId);
     var noteEl = $('rank300-note');
     var lowestMed = (function () { var lo = Infinity; for (var i = 0; i < MODELS.length; i++) { if (MODELS[i].bench && MODELS[i].bench[0] < lo) lo = MODELS[i].bench[0]; } return num(lo, 2); })();
     var items;

@@ -10,8 +10,8 @@
 
   var MODELS = [
     { id: 'fable51', name: 'Fable 5.1 (xhigh)', bench: [81.33, 40498], p: [70.0, 350.0, 1.75], gp: null, note: '缓存写$12.5；榜单官方输出价¥345(按6.9)与OR一致' },
-    { id: 'gpt6astra', name: 'GPT-6 Astra (xhigh)', bench: [87.64, 12495], p: [70.0, 350.0, 7.0], gp: null, note: '26-09新晋；缓存读$1.0(是Fable的4倍)、缓存写$12.5；榜单官方输出¥345与OR一致' },
-    { id: 'gpt56sol', name: 'GPT-5.6 Sol (xhigh)', bench: [70.03, 21685], p: [14.0, 70.0, 1.4], gp: null, note: '榜单官方输出价¥138=$20' },
+    { id: 'gpt6astra', name: 'GPT-6 Astra (xhigh)', bench: [87.64, 12495], p: [70.0, 350.0, 7.0], gp: null, longctx: true, note: '26-09新晋；缓存读$1.0(是Fable的4倍)、缓存写$12.5；榜单官方输出¥345与OR一致；>272K长档：输入/缓存×2、输出×1.5（整请求生效）' },
+    { id: 'gpt56sol', name: 'GPT-5.6 Sol (xhigh)', bench: [70.03, 21685], p: [14.0, 70.0, 1.4], gp: null, longctx: true, note: '榜单官方输出价¥138=$20；>272K长档：输入/缓存×2、输出×1.5（整请求生效）' },
     { id: 'opus5', name: 'Opus 5 (xhigh)', bench: [64.42, 29905], p: [35.0, 175.0, 3.5], gp: null, note: '缓存写$6.25' },
     { id: 'kimik3', name: 'Kimi-K3 (max)', bench: [64.32, 41543], p: [20.0, 100.0, 2.0], gp: [15, 14.0, 70.0, 1.4], note: '官方CNY牌价20/100/2(platform.kimi.com)；榜单锚点¥105=$15×7第三方折算值' },
     { id: 'gem38flash', name: 'Gemini 3.8 Flash (high)', bench: [62.05, 39122], p: [5.25, 26.25, 0.525], gp: null, note: '26-09新增；价目与3.7 Flash相同' },
@@ -28,7 +28,7 @@
     { id: 'dsv4flash', name: 'DeepSeek V4 Flash 0731 (max)', bench: [51.48, 78381], p: [1.5, 4.5, 0.05], gp: [30, 0.35, 1.4, 0.007], note: '非高峰(Off-Peak)档, 每周星期一至星期五: 0:00-9:00/12:00-14:00/18:00-24:00,每周星期天全天。9-10 实测原厂价（原 1/4/0.02 为 9-10 调价前旧值）。' },
     { id: 'dsv4flashpeak', name: 'DeepSeek V4 Flash 0731 (高峰)', bench: [51.48, 78381], p: [3.0, 9.0, 0.1], gp: [30, 0.7, 2.8, 0.014], note: '高峰(Peak)档=非高峰×2。每周星期一至星期五:9:00-12:00/14:00-18:00（北京时间）。9-10 实测原厂价。' },
     { id: 'qwen38flash', name: 'Qwen3.8-Flash (xhigh)', bench: [50.6, 66431], p: [0.8, 2.7, 0.1], gp: [30, 0.35, 1.0967, 0.0373] },
-    { id: 'gpt56luna', name: 'GPT-5.6 Luna (xhigh)', bench: [47.86, 39733], p: [1.4, 8.4, 0.14], gp: [15, 0.9333, 5.6, 0.0933], note: '缓存写$0.25' },
+    { id: 'gpt56luna', name: 'GPT-5.6 Luna (xhigh)', bench: [47.86, 39733], p: [1.4, 8.4, 0.14], gp: [15, 0.9333, 5.6, 0.0933], longctx: true, note: '缓存写$0.25；>272K长档：输入/缓存×2、输出×1.5（整请求生效）' },
     { id: 'seed21pro', name: 'Seed-2.1-pro (high)', bench: [43.41, 85608], p: [6.0, 30.0, 1.2], gp: null },
     { id: 'qwen3827b', name: 'Qwen3.8-27B (xhigh)', bench: [43.05, 74826], p: [3.0, 12.0, 0.6], gp: null, note: '隐式0.6/显式读0.3/显式写3.75' },
     { id: 'muse12', name: 'Muse Spark 1.2 (标准)', bench: [42.96, 43915], p: [8.75, 29.75, 1.05], gp: [60, 0.1167, 0.2333, 0.0023], note: 'OR标准版$1.25/$4.25/$0.15×7；榜单锚点¥29.33≈标准输出价¥29.75；lmbench按标准价计费' },
@@ -42,7 +42,7 @@
     { id: 'sparkx25', name: 'Spark X2.5', bench: [19.74, 45261], p: [1.6, 6.0, 0.24], gp: null, note: '讯飞星火X2.5(293B-A30B MoE' },
     { id: 'ling30flash', name: 'Ling-3.0-flash', bench: [14.58, 93005], p: [0.125, 0.375, 0.025], gp: null, note: '每日50万免费token(2:00刷新，余额不转结)。目前为2.5折价，折扣十月份结束。' },
     { id: 'gemma431b', name: 'Gemma 4 31B', bench: [14.3, 15352], p: [0.63, 2.38, 0.35], gp: null, note: '缓存读高于输入价(Google原价如此)' },
-    { id: 'gpt55instant', name: 'GPT-5.5 Instant', bench: [13.67, 1742], p: [35.0, 210.0, 3.5], gp: null, note: 'OR无instant官方行用gpt-5.5近似；非思考行' },
+    { id: 'gpt55instant', name: 'GPT-5.5 Instant', bench: [13.67, 1742], p: [35.0, 210.0, 3.5], gp: null, longctx: true, note: 'OR无instant官方行用gpt-5.5近似；非思考行；>272K长档：输入/缓存×2、输出×1.5（整请求生效）' },
     { id: 'step37flash', name: 'Step-3.7-Flash', bench: [13.61, 47691], p: [1.35, 8.1, 0.27], gp: null },
     { id: 'mimov25pro', name: 'MiMo-V2.5-Pro', bench: [13.42, 35980], p: [3.0, 6.0, 0.025], gp: [15, 2.03, 4.06, 0.0169] },
     { id: 'openpangu2pro', name: 'openPangu-2.0-Pro', bench: [12.53, 28493], p: [4.8, 17.6, 1.2], gp: null, note: '按>32K档记' },
